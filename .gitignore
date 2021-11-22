@@ -1,0 +1,16 @@
+# Intellij Files
+*.iml
+.idea
+target
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+*/target
