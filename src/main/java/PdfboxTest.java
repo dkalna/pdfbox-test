@@ -9,6 +9,7 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.util.Matrix;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -25,26 +26,43 @@ public class PdfboxTest {
         PDDocument document = PDDocument.load(new File("verfuegung.pdf"));
 
         for(int pageIndex=0; pageIndex<document.getNumberOfPages(); pageIndex++) {
+
             PDPage page = document.getPage(pageIndex);
+            PDPageContentStream contents = new PDPageContentStream(
+                    document, page, PDPageContentStream.AppendMode.APPEND, true, true);
+
             if(pageIndex==0) {
-                PDPageContentStream contents = new PDPageContentStream(document, page, PDPageContentStream.AppendMode.APPEND, false);
                 addBarcode(document, contents, "991220123456123456");
-                addAplus(document, contents, "A+");
-                addText(document, contents, "99.12.201234.56123456");
-                contents.close();
+                addAplus( contents, "A+");
+                addText(contents, "99.12.201234.56123456");
             }
             PDRectangle mediaBox = page.getMediaBox();
             if(mediaBox.getWidth() > mediaBox.getHeight()) {
-                System.out.printf("Page %d has landscape orientation.", pageIndex+1);
+                float width = page.getMediaBox().getHeight();
+                float height = page.getMediaBox().getWidth();
+                contents.transform(Matrix.getRotateInstance(Math.toRadians(270), 0, width));
+
                 page.setRotation(270);
             }
+            addMarker(contents);
+
+            contents.close();
         }
 
         document.save(new File("test.pdf"));
         document.close();
     }
 
-    private void addText(PDDocument document, PDPageContentStream contentStream, String number) throws IOException {
+    private void addMarker(PDPageContentStream contentStream) throws IOException {
+
+        contentStream.beginText();
+        contentStream.setFont(PDType1Font.HELVETICA, 16);
+        contentStream.newLineAtOffset(150, 831);
+        contentStream.showText("| | || | |");
+        contentStream.endText();
+    }
+
+    private void addText(PDPageContentStream contentStream, String number) throws IOException {
 
         contentStream.beginText();
         contentStream.setFont(PDType1Font.HELVETICA, 9);
@@ -53,7 +71,7 @@ public class PdfboxTest {
         contentStream.endText();
     }
 
-    private void addAplus(PDDocument document, PDPageContentStream contentStream, String number) throws IOException {
+    private void addAplus(PDPageContentStream contentStream, String number) throws IOException {
 
         contentStream.beginText();
         contentStream.setFont(PDType1Font.HELVETICA_BOLD, 24);
