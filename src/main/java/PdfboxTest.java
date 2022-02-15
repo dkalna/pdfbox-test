@@ -14,6 +14,7 @@ import org.apache.pdfbox.util.Matrix;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.UUID;
 
 public class PdfboxTest {
 
@@ -23,34 +24,44 @@ public class PdfboxTest {
     }
 
     private void start() throws Exception {
-        PDDocument document = PDDocument.load(new File("verfuegung.pdf"));
+        PDDocument pdDocument = PDDocument.load(new File("simple.pdf"));
 
-        for(int pageIndex=0; pageIndex<document.getNumberOfPages(); pageIndex++) {
+        for(int pageIndex=0; pageIndex<pdDocument.getNumberOfPages(); pageIndex++) {
 
-            PDPage page = document.getPage(pageIndex);
+            PDPage pdPage = pdDocument.getPage(pageIndex);
             PDPageContentStream contents = new PDPageContentStream(
-                    document, page, PDPageContentStream.AppendMode.APPEND, true, true);
+                    pdDocument, pdPage, PDPageContentStream.AppendMode.APPEND, true, true);
 
-            if(pageIndex==0) {
-                addBarcode(document, contents, "991220123456123456");
-                addAplus( contents, "A+");
-                addText(contents, "99.12.201234.56123456");
-            }
-            PDRectangle mediaBox = page.getMediaBox();
+            PDRectangle mediaBox = pdPage.getMediaBox();
             if(mediaBox.getWidth() > mediaBox.getHeight()) {
-                float width = page.getMediaBox().getHeight();
-                float height = page.getMediaBox().getWidth();
+                float width = pdPage.getMediaBox().getHeight();
+                float height = pdPage.getMediaBox().getWidth();
                 contents.transform(Matrix.getRotateInstance(Math.toRadians(270), 0, width));
 
-                page.setRotation(270);
+                pdPage.setRotation(270);
             }
+
+            applyPrintableInfoToPage(pdPage, contents);
             addMarker(contents);
+            addText(contents, "123456-789");
+            addAplus(contents, "A+");
+            addBarcode(pdDocument, contents, "123456-789");
 
             contents.close();
         }
 
-        document.save(new File("verfuegung_markers.pdf"));
-        document.close();
+        pdDocument.save(new File("simple_markers.pdf"));
+        pdDocument.close();
+    }
+
+    // SVTI Code
+    private void applyPrintableInfoToPage(PDPage pdPage, PDPageContentStream contentStream) throws IOException {
+
+        contentStream.setFont(PDType1Font.HELVETICA, (float) 6);
+        contentStream.beginText();
+        contentStream.setTextMatrix(Matrix.getRotateInstance(Math.PI / 2, 20, pdPage.getMediaBox().getHeight() / 2 - 25));
+        contentStream.showText("TestApp" + "   " + UUID.randomUUID() + " 1 / 1");
+        contentStream.endText();
     }
 
     private void addMarker(PDPageContentStream contentStream) throws IOException {
@@ -75,7 +86,7 @@ public class PdfboxTest {
 
         contentStream.beginText();
         contentStream.setFont(PDType1Font.HELVETICA_BOLD, 24);
-        contentStream.newLineAtOffset(333, 730);
+        contentStream.newLineAtOffset(320, 730);
         contentStream.showText(number);
         contentStream.endText();
     }
